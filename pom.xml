@@ -44,6 +44,8 @@
         <!-- The -load option is a shortcut for or -output=type=docker -->
         <!-- Could be changed by the -push option !-->
         <container.build.extraarg>--load</container.build.extraarg>
+        <!-- By default, the tag of docker image is set to latest -->
+        <docker.image.tag>latest</docker.image.tag>
     </properties>
 
     <dependencyManagement>
@@ -186,7 +188,7 @@
                                             <argument>${container.platform}</argument>
                                             <argument>${container.build.extraarg}</argument>
                                             <argument>-t</argument>
-                                            <argument>${docker.image.prefix}/${project.artifactId}</argument>
+                                            <argument>${docker.image.prefix}/${project.artifactId}:${docker.image.tag}</argument>
                                             <argument>${project.build.directory}</argument>
                                         </arguments>
                                     </configuration>
