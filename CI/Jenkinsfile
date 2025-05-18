@@ -1,0 +1,67 @@
+pipeline {
+    agent any
+
+    environment {
+        REPO_URL = 'https://github.com/huyen-nguyen-04/DevOps-Project-2.git'
+        DOCKER_IMAGE_PREFIX = 'nthheulwen'
+    }
+
+    stages {
+        stage('Get Latest Commit') {
+            steps {
+                script {
+                    LATEST_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    echo "Latest Commit Hash: ${LATEST_COMMIT}"
+                }
+            }
+        }
+
+        stage('Get Changed Service') {
+            steps {
+                script {
+                    CHANGED_SERVICE = sh(script: "git diff-tree --no-commit-id --name-only -r ${LATEST_COMMIT} | head -n 1", returnStdout: true).trim().split('/')[0]
+                    if (CHANGED_SERVICE =~ /spring-petclinic-.*-service/) {
+                        echo "Changed Service: ${CHANGED_SERVICE}"
+                    }
+                    else {
+                        CHANGED_SERVICE = ''
+                        echo "No service changes detected. Exiting."
+                    }
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            when {
+                expression { CHANGED_SERVICE != '' }
+            }
+
+            steps {
+                script {
+                    sh """
+                        ./mvnw clean install \\
+                            -f ${CHANGED_SERVICE}/pom.xml \\
+                            -P buildDocker \\
+                            -Ddocker.image.prefix=${DOCKER_IMAGE_PREFIX} \\
+                            -Ddocker.image.tag=${LATEST_COMMIT} 
+                    """
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            when {
+                expression { CHANGED_SERVICE != '' }
+            }
+
+            steps {
+                script {
+                    DOCKER_IMAGE = "${DOCKER_IMAGE_PREFIX}/${CHANGED_SERVICE}:${LATEST_COMMIT}"
+                    sh "docker push ${DOCKER_IMAGE}"
+                    sh "docker rmi ${DOCKER_IMAGE}"
+                    echo "Docker image ${DOCKER_IMAGE} pushed successfully."
+                }
+            }
+        }
+    }
+}
