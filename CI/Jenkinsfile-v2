@@ -129,15 +129,17 @@ pipeline {
             }
 
             steps {
-                sh """
-                    git clone https://${GIT_CREDENTIALS_USR}:${GIT_CREDENTIALS_PSW}@github.com/huyen-nguyen-04/DevOps-Project-2-CD.git
-                    cd DevOps-Project-2-CD
-                    git checkout main
-                    sed -i 's/tag: .*/tag: ${env.TAG_NAME}/g' staging/values.yaml
-                    git add staging/values.yaml
-                    git commit -m 'Update image tag to ${env.TAG_NAME}'
-                    git push origin main
-                """
+                withCredentials([string(credentialsId: 'github-pat-id', variable: 'GITHUB_PAT')]) {
+                    sh """
+                        git clone https://${GITHUB_PAT}@github.com/huyen-nguyen-04/DevOps-Project-2-CD.git
+                        cd DevOps-Project-2-CD
+                        git checkout main
+                        sed -i 's/tag: .*/tag: ${TAG_NAME}/g' staging/values.yaml
+                        git add staging/values.yaml
+                        git commit -m "Update image tag to ${TAG_NAME}"
+                        git push origin main
+                    """
+                }
             }
         } 
     }
