@@ -104,24 +104,24 @@ pipeline {
         //     }
         // }
 
-        stage('Checkout GitOps Repository') {
-            when {
-                expression { IS_TAGGED }
-            }
+        // stage('Checkout GitOps Repository') {
+        //     when {
+        //         expression { IS_TAGGED }
+        //     }
 
-            steps {
-                script {
-                    checkout([
-                        $class: 'GitSCM',
-                        branches: [[name: '*/main']],
-                        userRemoteConfigs: [[
-                            url: "${GITOPS_REPO}",
-                            credentialsId: "${CREDENTIAL_ID}"
-                        ]]
-                    ])
-                }
-            }
-        }
+        //     steps {
+        //         script {
+        //             checkout([
+        //                 $class: 'GitSCM',
+        //                 branches: [[name: '*/main']],
+        //                 userRemoteConfigs: [[
+        //                     url: "${GITOPS_REPO}",
+        //                     credentialsId: "${CREDENTIAL_ID}"
+        //                 ]]
+        //             ])
+        //         }
+        //     }
+        // }
 
         stage('Deploy to Staging') {
             when {
@@ -130,11 +130,13 @@ pipeline {
 
             steps {
                 sh """
+                    git clone https://${GIT_CREDENTIALS_USR}:${GIT_CREDENTIALS_PSW}@github.com/huyen-nguyen-04/DevOps-Project-2-CD.git
+                    cd DevOps-Project-2-CD
                     git checkout main
                     sed -i 's/tag: .*/tag: ${env.TAG_NAME}/g' staging/values.yaml
                     git add staging/values.yaml
                     git commit -m 'Update image tag to ${env.TAG_NAME}'
-                    git push https://${GIT_CREDENTIALS_USR}:${GIT_CREDENTIALS_PSW}@github.com/huyen-nguyen-04/DevOps-Project-2-CD.git main
+                    git push origin main
                 """
             }
         } 
