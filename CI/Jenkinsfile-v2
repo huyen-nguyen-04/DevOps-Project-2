@@ -69,19 +69,19 @@ pipeline {
                 script {
                     if (IS_TAGGED) {
                         sh """
-                            ./mvnw clean install \\
-                                -f pom.xml \\
-                                -P buildDocker \\
-                                -Ddocker.image.prefix=${DOCKER_IMAGE_PREFIX} \\
+                            ./mvnw clean install \
+                                -f pom.xml \
+                                -P buildDocker \
+                                -Ddocker.image.prefix=${DOCKER_IMAGE_PREFIX} \
                                 -Ddocker.image.tag=${env.TAG_NAME} 
                         """
                     }
                     else  {
                         sh """
-                            ./mvnw clean install \\
-                                -f ${CHANGED_SERVICE}/pom.xml \\
-                                -P buildDocker \\
-                                -Ddocker.image.prefix=${DOCKER_IMAGE_PREFIX}
+                            ./mvnw clean install \
+                                -f ${CHANGED_SERVICE}/pom.xml \
+                                -P buildDocker \
+                                -Ddocker.image.prefix=${DOCKER_IMAGE_PREFIX} \
                                 -Ddocker.image.tag=${IMAGE_TAG}
                         """
                     }
