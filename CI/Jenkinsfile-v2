@@ -9,27 +9,27 @@ pipeline {
     }
 
     stages {
-        // stage('Branch Validation') {
-        //     steps {
-        //         script {
-        //             sh "echo ${env.GIT_BRANCH}"
-        //             sh "echo ${env.TAG_NAME}"
-        //             IS_MAIN = (env.GIT_BRANCH == 'origin/main' || env.GIT_BRANCH == 'main')
-        //             IS_TAGGED = (env.TAG_NAME != null && env.TAG_NAME != '')
-        //             SERVICES = [
-        //                 'spring-petclinic-admin-server',
-        //                 'spring-petclinic-api-gateway',
-        //                 'spring-petclinic-config-server',
-        //                 'spring-petclinic-discovery-server',
-        //                 'spring-petclinic-customers-service',
-        //                 'spring-petclinic-visits-service',
-        //                 'spring-petclinic-vets-service',
-        //             ]
+        stage('Branch Validation') {
+            steps {
+                script {
+                    sh "echo ${env.GIT_BRANCH}"
+                    sh "echo ${env.TAG_NAME}"
+                    IS_MAIN = (env.GIT_BRANCH == 'origin/main' || env.GIT_BRANCH == 'main')
+                    IS_TAGGED = (env.TAG_NAME != null && env.TAG_NAME != '')
+                    SERVICES = [
+                        'spring-petclinic-admin-server',
+                        'spring-petclinic-api-gateway',
+                        'spring-petclinic-config-server',
+                        'spring-petclinic-discovery-server',
+                        'spring-petclinic-customers-service',
+                        'spring-petclinic-visits-service',
+                        'spring-petclinic-vets-service',
+                    ]
 
-        //             IMAGE_TAG = IS_TAGGED ? env.TAG_NAME : 'latest'
-        //         }
-        //     }
-        // }
+                    IMAGE_TAG = IS_TAGGED ? env.TAG_NAME : 'latest'
+                }
+            }
+        }
 
         // stage('Get Latest Commit') {
         //     when {
