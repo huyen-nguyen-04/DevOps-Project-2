@@ -51,15 +51,14 @@ pipeline {
 
             steps {
                 script {
-                    CHANGED_SERVICE = sh(script: "git diff-tree --no-commit-id --name-only -r ${LATEST_COMMIT} | head -n 1", returnStdout: true).trim().split('/')[0]
-                    if (CHANGED_SERVICE =~ /spring-petclinic-.*-service/) {
-                        echo "Changed Service: ${CHANGED_SERVICE}"
-                        SERVICES = [CHANGED_SERVICE]
-                    }
-                    else {
-                        CHANGED_SERVICE = ''
-                        echo "No service changes detected."
-                    }
+                    sh "git diff-tree --no-commit-id --name-only -r ${LATEST_COMMIT} |  head -n 1"
+                    CHANGED_SERVICE = sh(script: """
+                        git diff-tree --no-commit-id --name-only -r ${LATEST_COMMIT} | \
+                        grep '^spring-petclinic-.*/' | \
+                        head -n 1
+                    """, returnStdout: true).trim().split('/')[0]
+                    echo "Changed Service: ${CHANGED_SERVICE}"
+                    SERVICES = [CHANGED_SERVICE]
                 }
             }
         }
