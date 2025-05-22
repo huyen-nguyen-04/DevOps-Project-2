@@ -129,9 +129,11 @@ pipeline {
             }
 
             steps {
-                withCredentials([string(credentialsId: "${CREDENTIAL_ID}", variable: 'GITHUB_PAT')]) {
+                withCredentials([usernamePassword(credentialsId: 'Github-PAT',
+                                 usernameVariable: 'GIT_USER',
+                                 passwordVariable: 'GIT_PASSWORD')]) {
                     sh """
-                        git clone https://${GITHUB_PAT}@github.com/huyen-nguyen-04/DevOps-Project-2-CD.git
+                        git clone https://${GIT_USER}:${GIT_PASSWORD}@github.com/huyen-nguyen-04/DevOps-Project-2-CD.git
                         cd DevOps-Project-2-CD
                         git checkout main
                         sed -i 's/tag: .*/tag: ${TAG_NAME}/g' staging/values.yaml
