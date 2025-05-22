@@ -130,6 +130,7 @@ pipeline {
 
             steps {
                 sh """
+                    git checkout main
                     sed -i 's/tag: .*/tag: ${env.TAG_NAME}/g' staging/values.yaml
                     git add staging/values.yaml
                     git commit -m 'Update image tag to ${env.TAG_NAME}'
