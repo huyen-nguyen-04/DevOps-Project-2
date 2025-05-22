@@ -6,7 +6,7 @@ pipeline {
         DOCKER_IMAGE_PREFIX = 'nthheulwen'
         GITOPS_REPO = 'https://github.com/huyen-nguyen-04/DevOps-Project-2-CD.git'
         CREDENTIAL_ID = 'Github-PAT'
-        GIT_CREDENTIALS = credentials(CREDENTIAL_ID)
+        GIT_CREDENTIALS = credentials('Github-PAT')
     }
 
     stages {
