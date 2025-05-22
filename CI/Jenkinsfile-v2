@@ -112,7 +112,7 @@ pipeline {
                 script {
                     checkout([
                         $class: 'GitSCM',
-                        branches: [[name: 'main']],
+                        branches: [[name: 'origin/main']],
                         userRemoteConfigs: [[
                             url: "${GITOPS_REPO}",
                             credentialsId: "${CREDENTIAL_ID}"
@@ -128,7 +128,6 @@ pipeline {
             }
 
             steps {
-                sh "git checkout main"
                 sh "sed -i 's/tag: .*/tag: ${env.TAG_NAME}/g' staging/values.yaml"
                 sh "git add staging/values.yaml"
                 sh "git commit -m 'Update image tag to ${env.TAG_NAME}'"
