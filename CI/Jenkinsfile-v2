@@ -131,6 +131,7 @@ pipeline {
                 sh "sed -i 's/tag: .*/tag: ${env.TAG_NAME}/g' staging/values.yaml"
                 sh "git add staging/values.yaml"
                 sh "git commit -m 'Update image tag to ${env.TAG_NAME}'"
+                sh "git push origin main"
             }
         } 
     }
