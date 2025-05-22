@@ -4,105 +4,123 @@ pipeline {
     environment {
         REPO_URL = 'https://github.com/huyen-nguyen-04/DevOps-Project-2.git'
         DOCKER_IMAGE_PREFIX = 'nthheulwen'
+        GITOPS_REPO = 'https://github.com/huyen-nguyen-04/DevOps-Project-2-CD.git'
+        CREDENTIAL_ID = 'Github-PAT'
     }
 
     stages {
-        stage('Branch Validation') {
+        // stage('Branch Validation') {
+        //     steps {
+        //         script {
+        //             sh "echo ${env.GIT_BRANCH}"
+        //             sh "echo ${env.TAG_NAME}"
+        //             IS_MAIN = (env.GIT_BRANCH == 'origin/main' || env.GIT_BRANCH == 'main')
+        //             IS_TAGGED = (env.TAG_NAME != null && env.TAG_NAME != '')
+        //             SERVICES = [
+        //                 'spring-petclinic-admin-server',
+        //                 'spring-petclinic-api-gateway',
+        //                 'spring-petclinic-config-server',
+        //                 'spring-petclinic-discovery-server',
+        //                 'spring-petclinic-customers-service',
+        //                 'spring-petclinic-visits-service',
+        //                 'spring-petclinic-vets-service',
+        //             ]
+        //             IMAGE_TAG = 'latest'
+        //         }
+        //     }
+        // }
+
+        // stage('Get Latest Commit') {
+        //     when {
+        //         expression { !IS_TAGGED }
+        //     }
+
+        //     steps {
+        //         script {
+        //             LATEST_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+        //             echo "Latest Commit Hash: ${LATEST_COMMIT}"
+        //             if (!IS_MAIN) {
+        //                 IMAGE_TAG = LATEST_COMMIT
+        //             }
+        //         }
+        //     }
+        // }
+
+        // stage('Get Changed Service') {
+        //     when {
+        //         expression { !IS_TAGGED }
+        //     }
+
+        //     steps {
+        //         script {
+        //             changedService = sh(script: """
+        //                 git diff-tree -m --no-commit-id --name-only -r ${LATEST_COMMIT} | \
+        //                 grep '^spring-petclinic-.*/' | \
+        //                 head -n 1
+        //             """, returnStdout: true).trim().split('/')[0]
+        //             echo "Changed Service: ${changedService}"
+        //             SERVICES = [changedService]
+        //         }
+        //     }
+        // }
+
+        // stage('Build Docker Image') {
+        //     steps {
+        //         script {
+        //             if (IS_TAGGED) {
+        //                 sh """
+        //                     ./mvnw clean install \
+        //                         -f pom.xml \
+        //                         -P buildDocker \
+        //                         -Ddocker.image.prefix=${DOCKER_IMAGE_PREFIX} \
+        //                         -Ddocker.image.tag=${env.TAG_NAME} 
+        //                 """
+        //             }
+        //             else  {
+        //                 sh """
+        //                     ./mvnw clean install \
+        //                         -f ${CHANGED_SERVICE}/pom.xml \
+        //                         -P buildDocker \
+        //                         -Ddocker.image.prefix=${DOCKER_IMAGE_PREFIX} \
+        //                         -Ddocker.image.tag=${IMAGE_TAG}
+        //                 """
+        //             }
+        //         }
+        //     }
+        // }
+
+        // stage('Push Docker Image') {
+        //     steps {
+        //         script {
+        //             for (service in SERVICES) {
+        //                 image = "${DOCKER_IMAGE_PREFIX}/${service}:${IMAGE_TAG}"
+        //                 sh "docker push ${image}"
+        //                 sh "docker rmi ${image}"
+        //                 echo "Docker image ${image} pushed successfully."
+        //             }
+        //         }
+        //     }
+        // }
+
+        stage('Checkout GitOps Repository') {
             steps {
                 script {
-                    sh "echo ${env.GIT_BRANCH}"
-                    sh "echo ${env.TAG_NAME}"
-                    IS_MAIN = (env.GIT_BRANCH == 'origin/main' || env.GIT_BRANCH == 'main')
-                    IS_TAGGED = (env.TAG_NAME != null && env.TAG_NAME != '')
-                    SERVICES = [
-                        'spring-petclinic-admin-server',
-                        'spring-petclinic-api-gateway',
-                        'spring-petclinic-config-server',
-                        'spring-petclinic-discovery-server',
-                        'spring-petclinic-customers-service',
-                        'spring-petclinic-visits-service',
-                        'spring-petclinic-vets-service',
-                    ]
-                    IMAGE_TAG = 'latest'
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: [[name: 'main']],
+                        userRemoteConfigs: [[
+                            url: "${GITOPS_REPO}",
+                            credentialsId: "${CREDENTIAL_ID}"
+                        ]]
+                    ])
                 }
             }
         }
 
-        stage('Get Latest Commit') {
-            when {
-                expression { !IS_TAGGED }
-            }
-
+        stage('Deploy to Staging') {
             steps {
-                script {
-                    LATEST_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-                    echo "Latest Commit Hash: ${LATEST_COMMIT}"
-                    if (!IS_MAIN) {
-                        IMAGE_TAG = LATEST_COMMIT
-                    }
-                }
+                sh 'cat values.yaml'
             }
-        }
-
-        stage('Get Changed Service') {
-            when {
-                expression { !IS_TAGGED }
-            }
-
-            steps {
-                script {
-                    sh "git diff-tree -m --no-commit-id --name-only -r ${LATEST_COMMIT} |  head -n 1"
-                    CHANGED_SERVICE = sh(script: """
-                        git diff-tree -m --no-commit-id --name-only -r ${LATEST_COMMIT} | \
-                        grep '^spring-petclinic-.*/' | \
-                        head -n 1
-                    """, returnStdout: true).trim().split('/')[0]
-                    echo "Changed Service: ${CHANGED_SERVICE}"
-                    SERVICES = [CHANGED_SERVICE]
-                }
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    if (IS_TAGGED) {
-                        sh """
-                            ./mvnw clean install \
-                                -f pom.xml \
-                                -P buildDocker \
-                                -Ddocker.image.prefix=${DOCKER_IMAGE_PREFIX} \
-                                -Ddocker.image.tag=${env.TAG_NAME} 
-                        """
-                    }
-                    else  {
-                        sh """
-                            ./mvnw clean install \
-                                -f ${CHANGED_SERVICE}/pom.xml \
-                                -P buildDocker \
-                                -Ddocker.image.prefix=${DOCKER_IMAGE_PREFIX} \
-                                -Ddocker.image.tag=${IMAGE_TAG}
-                        """
-                    }
-                }
-            }
-        }
-
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    for (service in SERVICES) {
-                        PushDockerImage(DOCKER_IMAGE_PREFIX, service, IMAGE_TAG)
-                    }
-                }
-            }
-        }
+        } 
     }
-}
-
-def PushDockerImage(String prefix, String name, String tag) {
-    DOCKER_IMAGE = "${prefix}/${name}:${tag}"
-    sh "docker push ${DOCKER_IMAGE}"
-    sh "docker rmi ${DOCKER_IMAGE}"
-    echo "Docker image ${DOCKER_IMAGE} pushed successfully."
 }
