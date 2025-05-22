@@ -6,6 +6,7 @@ pipeline {
         DOCKER_IMAGE_PREFIX = 'nthheulwen'
         GITOPS_REPO = 'https://github.com/huyen-nguyen-04/DevOps-Project-2-CD.git'
         CREDENTIAL_ID = 'Github-PAT'
+        GIT_CREDENTIALS = credentials(CREDENTIAL_ID)
     }
 
     stages {
@@ -128,10 +129,13 @@ pipeline {
             }
 
             steps {
-                sh "sed -i 's/tag: .*/tag: ${env.TAG_NAME}/g' staging/values.yaml"
-                sh "git add staging/values.yaml"
-                sh "git commit -m 'Update image tag to ${env.TAG_NAME}'"
-                sh "git push main"
+                sh """
+                    sed -i 's/tag: .*/tag: ${env.TAG_NAME}/g' staging/values.yaml
+                    git add staging/values.yaml
+                    git commit -m 'Update image tag to ${env.TAG_NAME}'
+                    git push origin main
+                    git push https://${GIT_CREDENTIALS_USR}:${GIT_CREDENTIALS_PSW}@github.com/huyen-nguyen-04/DevOps-Project-2-CD.git main
+                """
             }
         } 
     }
