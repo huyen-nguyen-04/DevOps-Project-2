@@ -129,7 +129,7 @@ pipeline {
             }
 
             steps {
-                withCredentials([string(credentialsId: 'github-pat-id', variable: 'GITHUB_PAT')]) {
+                withCredentials([string(credentialsId: "${CREDENTIAL_ID}", variable: 'GITHUB_PAT')]) {
                     sh """
                         git clone https://${GITHUB_PAT}@github.com/huyen-nguyen-04/DevOps-Project-2-CD.git
                         cd DevOps-Project-2-CD
