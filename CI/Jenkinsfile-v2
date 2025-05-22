@@ -25,7 +25,8 @@ pipeline {
                         'spring-petclinic-visits-service',
                         'spring-petclinic-vets-service',
                     ]
-                    IMAGE_TAG = 'latest'
+
+                    IMAGE_TAG = IS_TAGGED ? env.TAG_NAME : 'latest'
                 }
             }
         }
