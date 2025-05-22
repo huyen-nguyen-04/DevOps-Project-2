@@ -6,7 +6,6 @@ pipeline {
         DOCKER_IMAGE_PREFIX = 'nthheulwen'
         GITOPS_REPO = 'https://github.com/huyen-nguyen-04/DevOps-Project-2-CD.git'
         CREDENTIAL_ID = 'Github-PAT'
-        GIT_CREDENTIALS = credentials('Github-PAT')
     }
 
     stages {
@@ -123,7 +122,7 @@ pipeline {
         //     }
         // }
 
-        stage('Deploy to Staging') {
+        stage('Update GitOps Repository') {
             when {
                 expression { IS_TAGGED }
             }
@@ -132,8 +131,8 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'Github-PAT',
                                  usernameVariable: 'GIT_USER',
                                  passwordVariable: 'GIT_PASSWORD')]) {
+                    sh 'git clone https://$GIT_USER:$GIT_PASSWORD@github.com/huyen-nguyen-04/DevOps-Project-2-CD.git'
                     sh """
-                        git clone https://${GIT_USER}:${GIT_PASSWORD}@github.com/huyen-nguyen-04/DevOps-Project-2-CD.git
                         cd DevOps-Project-2-CD
                         git checkout main
                         sed -i 's/tag: .*/tag: ${TAG_NAME}/g' staging/values.yaml
