@@ -51,9 +51,9 @@ pipeline {
 
             steps {
                 script {
-                    sh "git diff-tree --no-commit-id --name-only -r ${LATEST_COMMIT} |  head -n 1"
+                    sh "git diff-tree -m --no-commit-id --name-only -r ${LATEST_COMMIT} |  head -n 1"
                     CHANGED_SERVICE = sh(script: """
-                        git diff-tree --no-commit-id --name-only -r ${LATEST_COMMIT} | \
+                        git diff-tree -m --no-commit-id --name-only -r ${LATEST_COMMIT} | \
                         grep '^spring-petclinic-.*/' | \
                         head -n 1
                     """, returnStdout: true).trim().split('/')[0]
