@@ -67,10 +67,10 @@ pipeline {
                         git clone https://$GIT_USER:$GIT_PASSWORD@github.com/huyen-nguyen-04/DevOps-Project-2-CD.git --depth 1
                         cd DevOps-Project-2-CD
                         git checkout main
-                        sed -i 's/tag: .*/tag: ${env.IMAGE_TAG}/g' staging/values.yaml
-                        sed -i 's/tag: .*/tag: ${env.IMAGE_TAG}/g' dev/values.yaml
+                        sed -i 's/tag: .*/tag: ${TAG_NAME/g' staging/values.yaml
+                        sed -i 's/tag: .*/tag: ${TAG_NAME/g' dev/values.yaml
                         git add .
-                        git commit -m "Update image tag to ${env.IMAGE_TAG}"
+                        git commit -m "Update image tag to ${TAG_NAME"
                         git push origin main
                     '''
                 }
