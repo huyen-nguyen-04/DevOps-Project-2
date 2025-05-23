@@ -48,7 +48,6 @@ pipeline {
                                 script {
                                     image = "${DOCKER_IMAGE_PREFIX}/${service}:${TAG_NAME}"
                                     sh "docker push ${image}"
-                                    sh "docker rmi ${image}"
                                     echo "Docker image ${image} pushed successfully."
                                 }
                             }
