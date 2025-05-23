@@ -60,9 +60,6 @@ pipeline {
         }
 
         stage('Update GitOps Repository') {
-            when {
-                expression { IS_MAIN || IS_TAGGED }
-            }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'Github-PAT', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASSWORD')]) {
                     sh '''
