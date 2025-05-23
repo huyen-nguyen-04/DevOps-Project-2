@@ -12,8 +12,6 @@ pipeline {
         stage('Branch Validation') {
             steps {
                 script {
-                    sh "echo ${env.GIT_BRANCH}"
-                    sh "echo ${env.TAG_NAME}"
                     IS_MAIN = (env.GIT_BRANCH == 'origin/main' || env.GIT_BRANCH == 'main')
                     IS_TAGGED = (env.TAG_NAME != null && env.TAG_NAME != '')
                     SERVICES = [
@@ -101,7 +99,7 @@ pipeline {
 
         stage('Update GitOps Repository') {
             when {
-                expression { IS_MAIN }
+                expression { IS_MAIN || IS_TAGGED }
             }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'Github-PAT', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASSWORD')]) {
