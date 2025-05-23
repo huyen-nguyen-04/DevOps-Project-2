@@ -26,105 +26,103 @@ pipeline {
                         'spring-petclinic-vets-service',
                     ]
 
-                    IMAGE_TAG = IS_TAGGED ? env.TAG_NAME : 'latest'
+                    IMAGE_TAG = env.TAG_NAME
                 }
             }
         }
 
-        // stage('Get Latest Commit') {
-        //     when {
-        //         expression { !IS_TAGGED }
-        //     }
+        stage('Get Latest Commit') {
+            when {
+                expression { !IS_TAGGED }
+            }
 
-        //     steps {
-        //         script {
-        //             LATEST_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-        //             echo "Latest Commit Hash: ${LATEST_COMMIT}"
-        //             if (!IS_MAIN) {
-        //                 IMAGE_TAG = LATEST_COMMIT
-        //             }
-        //         }
-        //     }
-        // }
+            steps {
+                script {
+                    LATEST_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    echo "Latest Commit Hash: ${LATEST_COMMIT}"
+                    IMAGE_TAG = LATEST_COMMIT
+                }
+            }
+        }
 
-        // stage('Get Changed Service') {
-        //     when {
-        //         expression { !IS_TAGGED }
-        //     }
+        stage('Get Changed Service') {
+            when {
+                expression { !IS_TAGGED }
+            }
 
-        //     steps {
-        //         script {
-        //             changedService = sh(script: """
-        //                 git diff-tree -m --no-commit-id --name-only -r ${LATEST_COMMIT} | \
-        //                 grep '^spring-petclinic-.*/' | \
-        //                 head -n 1
-        //             """, returnStdout: true).trim().split('/')[0]
-        //             echo "Changed Service: ${changedService}"
-        //             SERVICES = [changedService]
-        //         }
-        //     }
-        // }
+            steps {
+                script {
+                    CHANGED_SERVICE = sh(script: """
+                        git diff-tree -m --no-commit-id --name-only -r ${LATEST_COMMIT} | \
+                        grep '^spring-petclinic-.*/' | \
+                        head -n 1
+                    """, returnStdout: true).trim().split('/')[0]
+                    echo "Changed Service: ${CHANGED_SERVICE}"
+                    SERVICES = [CHANGED_SERVICE]
+                }
+            }
+        }
 
-        // stage('Build Docker Image') {
-        //     steps {
-        //         script {
-        //             if (IS_TAGGED) {
-        //                 sh """
-        //                     ./mvnw clean install \
-        //                         -f pom.xml \
-        //                         -P buildDocker \
-        //                         -Ddocker.image.prefix=${DOCKER_IMAGE_PREFIX} \
-        //                         -Ddocker.image.tag=${env.TAG_NAME} 
-        //                 """
-        //             }
-        //             else  {
-        //                 sh """
-        //                     ./mvnw clean install \
-        //                         -f ${CHANGED_SERVICE}/pom.xml \
-        //                         -P buildDocker \
-        //                         -Ddocker.image.prefix=${DOCKER_IMAGE_PREFIX} \
-        //                         -Ddocker.image.tag=${IMAGE_TAG}
-        //                 """
-        //             }
-        //         }
-        //     }
-        // }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    if (IS_TAGGED) {
+                        sh """
+                            ./mvnw clean install \
+                                -f pom.xml \
+                                -P buildDocker \
+                                -Ddocker.image.prefix=${DOCKER_IMAGE_PREFIX} \
+                                -Ddocker.image.tag=${env.TAG_NAME} 
+                        """
+                    }
+                    else  {
+                        sh """
+                            ./mvnw clean install \
+                                -f ${CHANGED_SERVICE}/pom.xml \
+                                -P buildDocker \
+                                -Ddocker.image.prefix=${DOCKER_IMAGE_PREFIX} \
+                                -Ddocker.image.tag=${IMAGE_TAG}
+                        """
+                    }
+                }
+            }
+        }
 
-        // stage('Push Docker Image') {
-        //     steps {
-        //         script {
-        //             for (service in SERVICES) {
-        //                 image = "${DOCKER_IMAGE_PREFIX}/${service}:${IMAGE_TAG}"
-        //                 sh "docker push ${image}"
-        //                 sh "docker rmi ${image}"
-        //                 echo "Docker image ${image} pushed successfully."
-        //             }
-        //         }
-        //     }
-        // }
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    for (service in SERVICES) {
+                        image = "${DOCKER_IMAGE_PREFIX}/${service}:${IMAGE_TAG}"
+                        sh "docker push ${image}"
+                        sh "docker rmi ${image}"
+                        echo "Docker image ${image} pushed successfully."
+                    }
+                }
+            }
+        }
 
-        // stage('Checkout GitOps Repository') {
-        //     when {
-        //         expression { IS_TAGGED }
-        //     }
+        stage('Checkout GitOps Repository') {
+            when {
+                expression { IS_TAGGED }
+            }
 
-        //     steps {
-        //         script {
-        //             checkout([
-        //                 $class: 'GitSCM',
-        //                 branches: [[name: '*/main']],
-        //                 userRemoteConfigs: [[
-        //                     url: "${GITOPS_REPO}",
-        //                     credentialsId: "${CREDENTIAL_ID}"
-        //                 ]]
-        //             ])
-        //         }
-        //     }
-        // }
+            steps {
+                script {
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: [[name: '*/main']],
+                        userRemoteConfigs: [[
+                            url: "${GITOPS_REPO}",
+                            credentialsId: "${CREDENTIAL_ID}"
+                        ]]
+                    ])
+                }
+            }
+        }
 
         stage('Update GitOps Repository') {
             when {
-                expression { IS_TAGGED }
+                expression { IS_MAIN }
             }
 
             steps {
@@ -132,14 +130,29 @@ pipeline {
                                  usernameVariable: 'GIT_USER',
                                  passwordVariable: 'GIT_PASSWORD')]) {
                     sh 'git clone https://$GIT_USER:$GIT_PASSWORD@github.com/huyen-nguyen-04/DevOps-Project-2-CD.git'
-                    sh """
-                        cd DevOps-Project-2-CD
-                        git checkout main
-                        sed -i 's/tag: .*/tag: ${TAG_NAME}/g' staging/values.yaml
-                        git add staging/values.yaml
-                        git commit -m "Update image tag to ${TAG_NAME}"
-                        git push origin main
-                    """
+
+                    if (IS_TAGGED) {
+                        sh """
+                            cd DevOps-Project-2-CD
+                            git checkout main
+                            sed -i 's/tag: .*/tag: ${TAG_NAME}/g' staging/values.yaml
+                            sed -i 's/tag: .*/tag: ${TAG_NAME}/g' dev/values.yaml
+                            git add .
+                            git commit -m "Update image tag to ${TAG_NAME}"
+                            git push origin main
+                        """
+                    }
+                    else {
+                        service_name = CHANGED_SERVICE.split('-')[2]
+                        sh """
+                            cd DevOps-Project-2-CD
+                            git checkout main
+                            sed -i '/${service_name}:/,/tag:/ s/tag: .*/tag: ${TAG_NAME}/g' dev/values.yaml
+                            git add .
+                            git commit -m "Update ${CHANGED_SERVICE}'s image tag to ${TAG_NAME}"
+                            git push origin main
+                        """
+                    }
                 }
             }
         } 
