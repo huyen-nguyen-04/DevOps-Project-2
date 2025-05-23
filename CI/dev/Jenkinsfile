@@ -67,8 +67,6 @@ pipeline {
                         sh """
                             cd DevOps-Project-2-CD
                             git checkout main
-                            ls
-                            cat dev/values.yaml
                             sed -i '/${service}:/,/tag:/ s/tag: .*/tag: ${LATEST_COMMIT}/g' dev/values.yaml
                             git add .
                             git commit -m "Update ${CHANGED_SERVICE}'s image tag to ${LATEST_COMMIT}"
