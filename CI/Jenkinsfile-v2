@@ -124,37 +124,35 @@ pipeline {
             when {
                 expression { IS_MAIN }
             }
-
             steps {
-                withCredentials([usernamePassword(credentialsId: 'Github-PAT',
-                                 usernameVariable: 'GIT_USER',
-                                 passwordVariable: 'GIT_PASSWORD')]) {
-                    sh 'git clone https://$GIT_USER:$GIT_PASSWORD@github.com/huyen-nguyen-04/DevOps-Project-2-CD.git'
-
-                    if (IS_TAGGED) {
-                        sh """
-                            cd DevOps-Project-2-CD
-                            git checkout main
-                            sed -i 's/tag: .*/tag: ${TAG_NAME}/g' staging/values.yaml
-                            sed -i 's/tag: .*/tag: ${TAG_NAME}/g' dev/values.yaml
-                            git add .
-                            git commit -m "Update image tag to ${TAG_NAME}"
-                            git push origin main
-                        """
-                    }
-                    else {
-                        service_name = CHANGED_SERVICE.split('-')[2]
-                        sh """
-                            cd DevOps-Project-2-CD
-                            git checkout main
-                            sed -i '/${service_name}:/,/tag:/ s/tag: .*/tag: ${TAG_NAME}/g' dev/values.yaml
-                            git add .
-                            git commit -m "Update ${CHANGED_SERVICE}'s image tag to ${TAG_NAME}"
-                            git push origin main
-                        """
+                withCredentials([usernamePassword(credentialsId: 'Github-PAT', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASSWORD')]) {
+                    sh '''
+                        git clone https://$GIT_USER:$GIT_PASSWORD@github.com/huyen-nguyen-04/DevOps-Project-2-CD.git --depth 1
+                        cd DevOps-Project-2-CD
+                        git checkout main
+                    '''
+                    script {
+                        if (IS_TAGGED) {
+                            sh '''
+                                sed -i 's/tag: .*/tag: ${TAG_NAME}/g' staging/values.yaml
+                                sed -i 's/tag: .*/tag: ${TAG_NAME}/g' dev/values.yaml
+                                git add .
+                                git commit -m "Update image tag to ${TAG_NAME}"
+                                git push origin main
+                            '''
+                        } else {
+                            def service_name = CHANGED_SERVICE.split('-')[2]
+                            sh """
+                                sed -i '/${service_name}:/,/tag:/ s/tag: .*/tag: ${TAG_NAME}/g' dev/values.yaml
+                                git add .
+                                git commit -m "Update ${CHANGED_SERVICE}'s image tag to ${TAG_NAME}"
+                                git push origin main
+                            """
+                        }
                     }
                 }
             }
-        } 
+        }
+
     }
 }
