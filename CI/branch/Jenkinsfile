@@ -1,6 +1,12 @@
 pipeline {
     agent any
 
+    when {
+        not {
+            branch 'main'
+        }
+    }
+
     environment {
         REPO_URL = 'https://github.com/huyen-nguyen-04/DevOps-Project-2.git'
         DOCKER_IMAGE_PREFIX = 'nthheulwen'
@@ -19,23 +25,17 @@ pipeline {
         stage('Get Changed Service') {
             steps {
                 script {
-                    CHANGED_SERVICE = sh(script: "git diff-tree --no-commit-id --name-only -r ${LATEST_COMMIT} | head -n 1", returnStdout: true).trim().split('/')[0]
-                    if (CHANGED_SERVICE =~ /spring-petclinic-.*-service/) {
-                        echo "Changed Service: ${CHANGED_SERVICE}"
-                    }
-                    else {
-                        CHANGED_SERVICE = ''
-                        echo "No service changes detected. Exiting."
-                    }
+                    CHANGED_SERVICE = sh(script: """
+                        git diff-tree -m --no-commit-id --name-only -r ${LATEST_COMMIT} | \
+                        grep '^spring-petclinic-.*/' | \
+                        head -n 1
+                    """, returnStdout: true).trim().split('/')[0]
+                    echo "Changed Service: ${CHANGED_SERVICE}"
                 }
             }
         }
 
         stage('Build Docker Image') {
-            when {
-                expression { CHANGED_SERVICE != '' }
-            }
-
             steps {
                 script {
                     sh """
@@ -50,10 +50,6 @@ pipeline {
         }
 
         stage('Push Docker Image') {
-            when {
-                expression { CHANGED_SERVICE != '' }
-            }
-
             steps {
                 script {
                     DOCKER_IMAGE = "${DOCKER_IMAGE_PREFIX}/${CHANGED_SERVICE}:${LATEST_COMMIT}"
