@@ -17,10 +17,8 @@ pipeline {
                     IS_MAIN = (env.GIT_BRANCH == 'origin/main' || env.GIT_BRANCH == 'main')
                     IS_TAGGED = (env.TAG_NAME != null && env.TAG_NAME != '')
                     SERVICES = [
-                        'spring-petclinic-admin-server',
                         'spring-petclinic-api-gateway',
                         'spring-petclinic-config-server',
-                        'spring-petclinic-discovery-server',
                         'spring-petclinic-customers-service',
                         'spring-petclinic-visits-service',
                         'spring-petclinic-vets-service',
@@ -97,25 +95,6 @@ pipeline {
                         sh "docker rmi ${image}"
                         echo "Docker image ${image} pushed successfully."
                     }
-                }
-            }
-        }
-
-        stage('Checkout GitOps Repository') {
-            when {
-                expression { IS_TAGGED }
-            }
-
-            steps {
-                script {
-                    checkout([
-                        $class: 'GitSCM',
-                        branches: [[name: '*/main']],
-                        userRemoteConfigs: [[
-                            url: "${GITOPS_REPO}",
-                            credentialsId: "${CREDENTIAL_ID}"
-                        ]]
-                    ])
                 }
             }
         }
