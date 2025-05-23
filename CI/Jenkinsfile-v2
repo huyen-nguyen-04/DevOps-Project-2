@@ -106,6 +106,7 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'Github-PAT', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASSWORD')]) {
                     sh '''
+                        git rm -rf DevOps-Project-2-CD
                         git clone https://$GIT_USER:$GIT_PASSWORD@github.com/huyen-nguyen-04/DevOps-Project-2-CD.git --depth 1
                         cd DevOps-Project-2-CD
                         git checkout main
