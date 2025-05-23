@@ -36,10 +36,12 @@ pipeline {
                     SERVICES = [
                         'spring-petclinic-api-gateway',
                         'spring-petclinic-config-server',
+                        'spring-petclinic-admin-server',
+                        'spring-petclinic-discovery-server',
                         'spring-petclinic-customers-service',
-                        'spring-petclinic-discovry-server',
                         'spring-petclinic-vets-service',
                         'spring-petclinic-visits-service',
+                        'spring-petclinic-genai-service',
                     ]
                     for (service in SERVICES) {
                         image = "${DOCKER_IMAGE_PREFIX}/${service}:${TAG_NAME}"
