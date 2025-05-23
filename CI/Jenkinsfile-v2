@@ -108,12 +108,12 @@ pipeline {
                     sh '''
                         rm -rf DevOps-Project-2-CD
                         git clone https://$GIT_USER:$GIT_PASSWORD@github.com/huyen-nguyen-04/DevOps-Project-2-CD.git --depth 1
-                        cd DevOps-Project-2-CD
-                        git checkout main
                     '''
                     script {
                         if (IS_TAGGED) {
                             sh '''
+                                cd DevOps-Project-2-CD
+                                git checkout main
                                 sed -i 's/tag: .*/tag: ${env.IMAGE_TAG}/g' staging/values.yaml
                                 sed -i 's/tag: .*/tag: ${env.IMAGE_TAG}/g' dev/values.yaml
                                 git add .
@@ -123,6 +123,8 @@ pipeline {
                         } else {
                             def service_name = CHANGED_SERVICE.split('-')[2]
                             sh """
+                                cd DevOps-Project-2-CD
+                                git checkout main
                                 ls
                                 cat dev/values.yaml
                                 sed -i '/${service_name}:/,/tag:/ s/tag: .*/tag: ${IMAGE_TAG}/g' dev/values.yaml
