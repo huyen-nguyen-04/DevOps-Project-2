@@ -1,0 +1,83 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE_PREFIX = 'nthheulwen'
+        GITOPS_REPO = 'https://github.com/huyen-nguyen-04/DevOps-Project-2-CD.git'
+        CREDENTIAL_ID = 'Github-PAT'
+    }
+
+    stages {
+        stage('Get Latest Commit') {
+            steps {
+                script {
+                    LATEST_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    echo "Latest Commit Hash: ${LATEST_COMMIT}"
+                }
+            }
+        }
+
+        stage('Get Changed Service') {
+            steps {
+                script {
+                    CHANGED_SERVICE = sh(script: """
+                        git diff-tree -m --no-commit-id --name-only -r ${LATEST_COMMIT} | \
+                        grep '^spring-petclinic-.*/' | \
+                        head -n 1
+                    """, returnStdout: true).trim().split('/')[0]
+                    echo "Changed Service: ${CHANGED_SERVICE}"
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh """
+                        ./mvnw clean install \
+                            -f ${CHANGED_SERVICE}/pom.xml \
+                            -P buildDocker \
+                            -Ddocker.image.prefix=${DOCKER_IMAGE_PREFIX} \
+                            -Ddocker.image.tag=${LATEST_COMMIT}
+                    """
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    image = "${DOCKER_IMAGE_PREFIX}/${CHANGED_SERVICE}:${LATEST_COMMIT}"
+                    sh "docker push ${image}"
+                    sh "docker rmi ${image}"
+                    echo "Docker image ${image} pushed successfully."
+                }
+            }
+        }
+
+        stage('Update GitOps Repository') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'Github-PAT', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASSWORD')]) {
+                    sh '''
+                        rm -rf DevOps-Project-2-CD
+                        git clone https://$GIT_USER:$GIT_PASSWORD@github.com/huyen-nguyen-04/DevOps-Project-2-CD.git --depth 1
+                    '''
+                    script {
+                        def service = CHANGED_SERVICE.split('-')[2]
+                        sh """
+                            cd DevOps-Project-2-CD
+                            git checkout main
+                            ls
+                            cat dev/values.yaml
+                            sed -i '/${service}:/,/tag:/ s/tag: .*/tag: ${LATEST_COMMIT}/g' dev/values.yaml
+                            git add .
+                            git commit -m "Update ${CHANGED_SERVICE}'s image tag to ${LATEST_COMMIT}"
+                            git push origin main
+                        """
+                    }
+                }
+            }
+        }
+
+    }
+}

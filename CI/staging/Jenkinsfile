@@ -1,0 +1,76 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE_PREFIX = 'nthheulwen'
+        GITOPS_REPO = 'https://github.com/huyen-nguyen-04/DevOps-Project-2-CD.git'
+        CREDENTIAL_ID = 'Github-PAT'
+    }
+
+    stages {
+        stage('Get Tag Name') {
+            steps {
+                script {
+                    TAG_NAME = sh(script: 'git describe --tags --exact-match', returnStdout: true).trim()
+                }
+            }
+        }
+
+        stage('Build Docker Images') {
+            steps {
+                script {
+                    sh """
+                        ./mvnw clean install \
+                            -f pom.xml \
+                            -P buildDocker \
+                            -Ddocker.image.prefix=${DOCKER_IMAGE_PREFIX} \
+                            -Ddocker.image.tag=${TAG_NAME} 
+                    """
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    SERVICES = [
+                        'spring-petclinic-api-gateway',
+                        'spring-petclinic-config-server',
+                        'spring-petclinic-customers-service',
+                        'spring-petclinic-discovry-server',
+                        'spring-petclinic-vets-service',
+                        'spring-petclinic-visits-service',
+                    ]
+                    for (service in SERVICES) {
+                        image = "${DOCKER_IMAGE_PREFIX}/${service}:${TAG_NAME}"
+                        sh "docker push ${image}"
+                        sh "docker rmi ${image}"
+                        echo "Docker image ${image} pushed successfully."
+                    }
+                }
+            }
+        }
+
+        stage('Update GitOps Repository') {
+            when {
+                expression { IS_MAIN || IS_TAGGED }
+            }
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'Github-PAT', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASSWORD')]) {
+                    sh '''
+                        rm -rf DevOps-Project-2-CD
+                        git clone https://$GIT_USER:$GIT_PASSWORD@github.com/huyen-nguyen-04/DevOps-Project-2-CD.git --depth 1
+                        cd DevOps-Project-2-CD
+                        git checkout main
+                        sed -i 's/tag: .*/tag: ${env.IMAGE_TAG}/g' staging/values.yaml
+                        sed -i 's/tag: .*/tag: ${env.IMAGE_TAG}/g' dev/values.yaml
+                        git add .
+                        git commit -m "Update image tag to ${env.IMAGE_TAG}"
+                        git push origin main
+                    '''
+                }
+            }
+        }
+
+    }
+}
