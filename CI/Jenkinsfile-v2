@@ -123,6 +123,8 @@ pipeline {
                         } else {
                             def service_name = CHANGED_SERVICE.split('-')[2]
                             sh """
+                                ls
+                                cat dev/values.yaml
                                 sed -i '/${service_name}:/,/tag:/ s/tag: .*/tag: ${IMAGE_TAG}/g' dev/values.yaml
                                 git add .
                                 git commit -m "Update ${CHANGED_SERVICE}'s image tag to ${IMAGE_TAG}"
