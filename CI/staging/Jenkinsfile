@@ -42,12 +42,13 @@ pipeline {
                     ]
 
                     PUSH_STAGES = [:]
-                    for (def service in SERVICES) {
+                    for (service in SERVICES) {
+                        def image = "${DOCKER_IMAGE_PREFIX}/${service}:${TAG_NAME}"
                         PUSH_STAGES["Push ${service}"] = {
                             stage("Push ${service}") {
                                 script {
-                                    sh "docker push ${DOCKER_IMAGE_PREFIX}/${service}:${TAG_NAME}"
-                                    echo "Docker image ${DOCKER_IMAGE_PREFIX}/${service}:${TAG_NAME} pushed successfully."
+                                    sh "docker push ${image}"
+                                    echo "Docker image ${image} pushed successfully."
                                 }
                             }
                         }
