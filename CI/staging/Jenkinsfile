@@ -38,7 +38,8 @@ pipeline {
                         'spring-petclinic-config-server',
                         'spring-petclinic-customers-service',
                         'spring-petclinic-vets-service',
-                        'spring-petclinic-visits-service'
+                        'spring-petclinic-visits-service',
+                        'spring-petclinic-discovery-server'
                     ]
 
                     PUSH_STAGES = [:]
